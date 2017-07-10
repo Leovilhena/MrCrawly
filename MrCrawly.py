@@ -26,14 +26,6 @@ from urllib.parse import urlsplit
 # DONE IS BETTER THAN PERFECT!
 #
 
-def resolveAnchorLink(url):
-    # extract base url to resolve relative links
-    parts = urlsplit(url)
-    base_url = "{0.scheme}://{0.netloc}".format(parts)
-    path = url[:url.rfind('/')+1] if '/' in parts.path else url
-    return path
-
-
 def makeRequest(url):
     """ Request given url """
     try:
@@ -79,7 +71,7 @@ def getMetaTag(bsObj):
 def getLinks(bsObj):
 
     if not bsObj or bsObj == None:
-        return None
+        return
 
     # List for links from our page
     page_links = set()
@@ -100,48 +92,43 @@ def getLinks(bsObj):
         elif 'mailto' in link:
             emails.add(link)
             continue
-        # NEED TO HANDLE links without full url
-        elif link.startswith('/'):
-            resolveAnchorLink(url)
-            link = base_url + link
         else:
             continue
         # If one of them is a contact, add to a set
         if re.search(r"[./a-z0-9-]+(contact)[./a-z0-9-]+", link, re.I) or re.search(r"[./a-z0-9-]+(about)[./a-z0-9-]+", link, re.I):
-        # Adds link to our set
+            # Adds link to our set
+            print('Got some contact page!')
             contact_links.add(link)
         # Makes another request for this suposed contact page
             try:
                 contact_page = requests.get(link)
                 # Find all e-mails and creates a set with unique values
-                all_emails = set(re.findall(r"[a-z0-9\._+]+@[a-z0-9\.\-+_]+\.[a-z]*", contact_page.text, re.I))
+                all_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", contact_page.text, re.I))
                 # If we have one
-                if all_emails:
-                    # Add to our first set
-                    for email in all_emails:
-                        emails.add(email)
             except:
                 pass
-
-    if emails:
-        return emails
-    else:
-        return
-
-
+            if all_emails:
+                # Add to our first set
+                for email in all_emails:
+                    emails.add(email)
+    return emails
 
 
 
-# Variables
-title = None
-meta = None
+
+
 
 
 
 # CREATE a UI for input and choose action?
 # Infinite loop for running
 while(True):
-    print("Type Q to exit!\n")
+
+    title = None
+    meta = None
+    emails = None
+
+    print("\nType Q to exit!\n")
 
     # Url Input
     my_url = input("Mr.Crawly: ")
@@ -150,7 +137,7 @@ while(True):
     if my_url.lower() == 'q':
         break
 
-    #Finish url if needed *FIX LENGTH*
+    #Finish url if needed
     if len(my_url) < 4:
         continue
 
@@ -211,4 +198,4 @@ while(True):
     else:
         print('\nContact emails:')
         for contact in emails:
-            print(contact,'\n')
+            print(contact)
