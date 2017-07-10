@@ -90,7 +90,7 @@ def getLinks(bsObj):
             page_links.add(link)
             # Appends mails if is in tag
         elif 'mailto' in link:
-            emails.add(link)
+            emails.add(link[7:])
             continue
         else:
             continue
