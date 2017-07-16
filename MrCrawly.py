@@ -4,18 +4,18 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit
+import datetime
 
 # First attemp for a simple crawler to get info from a single page.
 # It actually just craw into contact page for emails
 # Can get links from pages, meta content and title.
-# I did it in one day, so there's a lot of things to fix and improve
-# Some functions got inspired by scraping sites and O'Relly books
-# Need to clean up the code and comment BETTER
+
 # Functionalities to be added soon:
+# - Analize texts, summerize paragraphs and compare to meta
 # - Abbility to crawl deeper to get more info
 # - Google up and get more from different websites of the same kind
 # - Identify language and improve for Portuguese and Polish
-# - Log procedures
+# - Log procedures (make with errors)
 # - Save info(title, meta, links, contact mail, maybe phone number) in a database
 # - Should I make it with classes? This is just simple as it goes.
 # - Fix many errors handling
@@ -23,12 +23,29 @@ from urllib.parse import urlsplit
 # DONE IS BETTER THAN PERFECT!
 #
 
+def logger(url, title, meta, emails):
+    """Simple logger, just to have a check what's been going on"""
+    with open('crawly_diary.log', 'a+') as cd:
+        cd.write('Date, "%s"\n' % str(datetime.datetime.now()))
+        cd.write('Url, "%s"\n' % url)
+        cd.write('Title, "%s"\n' % title.get_text())
+        for content in meta:
+            cd.write('Meta, "%s"\n' % content["content"])
+        for email in emails:
+            cd.write('Email, "%s"\n' % email)
+        cd.write('***\n')
+
+
 def printResults(title,meta,emails):
+    """Just print our results """
+
+    # Print for title
     if title == None or not title:
         print('\nNo title found :(\n')
     else:
         print('\nTitle:\n',title.get_text())
 
+    # Print for meta
     if meta == None or not meta:
         print('\nNo meta found :(\n')
     else:
@@ -36,24 +53,30 @@ def printResults(title,meta,emails):
         for content in meta:
             print(content["content"])
 
+    # Print for emails
     if emails == None or not emails:
         print('\nNo email found :(\n')
     else:
         print('\nContact emails:')
-        for contact in emails:
-            print(contact)
+        for email in emails:
+            print(email)
 
 
 def getUrl():
+    """Just get the input and move one"""
     try:
         url = input('Mr.Crawly: ')
         return url
-    except:
+    except as e:
+        print('...so tragic...')
+        print(e)
         pass
 
     return
 
 def helper(u_input):
+    """Our instructions and program options"""
+
     # Change user input to lower
     u_input = u_input.lower()
 
@@ -72,6 +95,7 @@ def helper(u_input):
     return False
 
 def urlBuilder(url):
+    """ Builds our url, if not well written"""
 
     # Splits url for checking, useful to add more features later
     split_url = urlsplit(url)
@@ -87,7 +111,7 @@ def urlBuilder(url):
         return url
 
 def makeRequest(url):
-    """ Request given url """
+    """Requests given url """
 
     # Headers for request mobile version
     headers = {"User-Agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 10_0 like Mac OS) AppleWebKit/602.1.38 (KHTML, like Gecko) Version/10.0 Mobile/14A300 Safari/602.1",
@@ -99,7 +123,7 @@ def makeRequest(url):
         if html.status_code == requests.codes.ok:
             print('Page fetched!')
             return html.text
-            
+
     except requests.exceptions.RequestException:
             # If didn't work, try to change protocol scheme
             if url[:5] == 'https':
@@ -120,7 +144,7 @@ def makeRequest(url):
                 return
 
 def bsObjCreator(url_text):
-    """ Creates a BeautifulSoup Object for scraping"""
+    """Creates a BeautifulSoup Object for scraping"""
 
     try:
         bsObj = BeautifulSoup(url_text, "lxml")
@@ -131,6 +155,7 @@ def bsObjCreator(url_text):
     return
 
 def getLinks(bsObj):
+    """Get all links from page and look for contact page and emails for contact"""
 
     # Sanity check
     if not bsObj or bsObj == None:
@@ -181,12 +206,10 @@ def getLinks(bsObj):
 
 
 
-
+# Welcome prints
 print("\n'Uncovering things that were sacred and manifest on this Earth'")
 print('Type H for help or scream!')
 print("Type Q to exit but there is no scape!")
-
-
 
 # Infinite loop for running
 while(True):
@@ -216,3 +239,4 @@ while(True):
             meta = my_soup.head.findAll("meta",{"name": {"description", "descriptions", "keywords", "keyword", "Description", "Descriptions", "Keywords", "Keyword"}})
             emails = getLinks(my_soup)
             printResults(title,meta,emails)
+            logger(my_url,title,meta,emails)
