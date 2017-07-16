@@ -67,9 +67,8 @@ def getUrl():
     try:
         url = input('Mr.Crawly: ')
         return url
-    except as e:
+    except:
         print('...so tragic...')
-        print(e)
         pass
 
     return
@@ -147,7 +146,7 @@ def bsObjCreator(url_text):
     """Creates a BeautifulSoup Object for scraping"""
 
     try:
-        bsObj = BeautifulSoup(url_text, "lxml")
+        bsObj = BeautifulSoup(url_text, "html5lib")
         return bsObj
     except AttributeError as e:
         print('Error: Lacks ingredients')
@@ -167,6 +166,9 @@ def getLinks(bsObj):
     contact_links = set()
     # Set of emails
     emails = set()
+
+    # general set
+    all_emails = set()
 
     # Iterates through "href" tags
     for link in bsObj.findAll('a'):
