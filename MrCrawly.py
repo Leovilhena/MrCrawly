@@ -15,28 +15,109 @@ from urllib.parse import urlsplit
 # - Abbility to crawl deeper to get more info
 # - Google up and get more from different websites of the same kind
 # - Identify language and improve for Portuguese and Polish
-# - Http and www encoders, you just write what you want and we'll do it for you
-# - Add headers
 # - Log procedures
 # - Save info(title, meta, links, contact mail, maybe phone number) in a database
 # - Should I make it with classes? This is just simple as it goes.
-# - Separate all code into more functions, specially in the running Loops
 # - Fix many errors handling
 #
 # DONE IS BETTER THAN PERFECT!
 #
 
+def printResults(title,meta,emails):
+    if title == None or not title:
+        print('\nNo title found :(\n')
+    else:
+        print('\nTitle:\n',title.get_text())
+
+    if meta == None or not meta:
+        print('\nNo meta found :(\n')
+    else:
+        print('\nMeta Tag:')
+        for content in meta:
+            print(content["content"])
+
+    if emails == None or not emails:
+        print('\nNo email found :(\n')
+    else:
+        print('\nContact emails:')
+        for contact in emails:
+            print(contact)
+
+
+def getUrl():
+    try:
+        url = input('Mr.Crawly: ')
+        return url
+    except:
+        pass
+
+    return
+
+def helper(u_input):
+    # Change user input to lower
+    u_input = u_input.lower()
+
+    # Check for program options
+    if u_input == 'q':
+        exit(0)
+    elif u_input == 'h':
+        print('\nJust type a website address to get contacts (english)')
+        print('Press Q to quit')
+        return True
+    elif u_input == 'scream':
+        print("\nPaste this in your browser to hear his call")
+        print('https://www.youtube.com/watch?v=G3LvhdFEOqs')
+        return True
+
+    return False
+
+def urlBuilder(url):
+
+    # Splits url for checking, useful to add more features later
+    split_url = urlsplit(url)
+
+    # Variable declaration
+    new_url = ""
+
+    # if not given which protocol, put http as standard
+    if not split_url.scheme:
+        new_url = 'http://' + url
+        return new_url
+    else:
+        return url
+
 def makeRequest(url):
     """ Request given url """
+
+    # Headers for request mobile version
+    headers = {"User-Agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 10_0 like Mac OS) AppleWebKit/602.1.38 (KHTML, like Gecko) Version/10.0 Mobile/14A300 Safari/602.1",
+                "Accept-Language":"en-US,en;q=0.5"}
     try:
         print('Mr.Crawling ...')
-        html  = requests.get(url)
+        # Our main request
+        html  = requests.get(url, headers=headers)
         if html.status_code == requests.codes.ok:
             print('Page fetched!')
             return html.text
-    except requests.exceptions.RequestException as e:
-            print('Did you talk to the dead? Page not found!')
-            return
+            
+    except requests.exceptions.RequestException:
+            # If didn't work, try to change protocol scheme
+            if url[:5] == 'https':
+                url = 'http' + url[5:]
+            elif url[:5] == 'http:':
+                url = 'https' + url[4:]
+            else:
+                print('Did you talk to the dead? Page not found!')
+                return
+            try:
+                # Try again!
+                html  = requests.get(url, headers=headers)
+                if html.status_code == requests.codes.ok:
+                    print('Page fetched!')
+                    return html.text
+            except:
+                print('Did you talk to the dead? Page not found!')
+                return
 
 def bsObjCreator(url_text):
     """ Creates a BeautifulSoup Object for scraping"""
@@ -49,27 +130,9 @@ def bsObjCreator(url_text):
 
     return
 
-        # Add more arguments and make it one function
-def getTitle(bsObj):
-    """Function that gets title from html pages"""
-    try:
-        return bsObj.head.title
-    except:
-        pass
-
-        return None
-
-def getMetaTag(bsObj):
-    try:
-        return bsObj.head.findAll("meta",{"name": {"description", "descriptions", "keywords", "keyword", "Description", "Descriptions", "Keywords", "Keyword"}})
-    except:
-        pass
-
-    return None
-
-# Create other functions related to this or separate this one?
 def getLinks(bsObj):
 
+    # Sanity check
     if not bsObj or bsObj == None:
         return
 
@@ -79,6 +142,7 @@ def getLinks(bsObj):
     contact_links = set()
     # Set of emails
     emails = set()
+
     # Iterates through "href" tags
     for link in bsObj.findAll('a'):
         if 'href' in link.attrs:
@@ -107,6 +171,8 @@ def getLinks(bsObj):
                 # If we have one
             except:
                 pass
+
+            # If we have a set of emails
             if all_emails:
                 # Add to our first set
                 for email in all_emails:
@@ -116,86 +182,37 @@ def getLinks(bsObj):
 
 
 
+print("\n'Uncovering things that were sacred and manifest on this Earth'")
+print('Type H for help or scream!')
+print("Type Q to exit but there is no scape!")
 
 
 
-
-# CREATE a UI for input and choose action?
 # Infinite loop for running
 while(True):
 
-    title = None
-    meta = None
-    emails = None
+    # Initial print
+    print('\nWhat went on in your head?')
 
-    print("\nType Q to exit!\n")
+    # Getting your url
+    first_input = getUrl()
 
-    # Url Input
-    my_url = input("Mr.Crawly: ")
-
-    # Quit condition
-    if my_url.lower() == 'q':
-        break
-
-    #Finish url if needed
-    if len(my_url) < 4:
+    # Checking input for other options
+    if helper(first_input):
         continue
 
-    if 'www.' in my_url[:4].lower() or '.io' in my_url:
-    # Try to concatenate http://
-        try:
-            full_url = "http://" + my_url
-            my_request = makeRequest(full_url)
+    # Building url
+    my_url = urlBuilder(first_input)
 
-            if my_request:
-                my_soup = bsObjCreator(my_request)
-                if my_soup:
-                    title = getTitle(my_soup)
-                    meta = getMetaTag(my_soup)
-                    emails = getLinks(my_soup)
-            else:
-                pass
-        except:
-            # Try again to concatenate https://
-            try:
-                full_url = "https://" + my_url
-                my_request = makeRequest(full_url)
+    # Making our request
+    my_request = makeRequest(my_url)
 
-                if my_request:
-                    my_soup = bsObjCreator(my_request)
-                    if my_soup:
-                        title = getTitle(my_soup)
-                        meta = getMetaTag(my_soup)
-                        emails = getLinks(my_soup)
-            except:
-                pass
-    elif 'http://' in my_url[:7].lower() or 'https://' in my_url[:8].lower():
-        my_request = makeRequest(my_url)
-
-        if my_request:
-            my_soup = bsObjCreator(my_request)
-            if my_soup:
-                title = getTitle(my_soup)
-                meta = getMetaTag(my_soup)
-                emails = getLinks(my_soup)
-
-
-    # Printing procedures and validation check
-    if title == None or not title:
-        print('\nNo title found :(\n')
-    else:
-        print('\nTitle:\n',title.get_text())
-
-    if meta == None or not meta:
-        print('\nNo meta found :(\n')
-    else:
-        print('\nMeta Tag:')
-        for content in meta:
-            print(content["content"])
-
-    if emails == None or not emails:
-        print('\nNo email found :(\n')
-    else:
-        print('\nContact emails:')
-        for contact in emails:
-            print(contact)
+    # If succeed create an BeautifulSoup Object
+    if my_request:
+        my_soup = bsObjCreator(my_request)
+        # If we have na Bs Object, go ahead
+        if my_soup:
+            title = my_soup.head.title
+            meta = my_soup.head.findAll("meta",{"name": {"description", "descriptions", "keywords", "keyword", "Description", "Descriptions", "Keywords", "Keyword"}})
+            emails = getLinks(my_soup)
+            printResults(title,meta,emails)
