@@ -3,7 +3,7 @@
 import requests
 import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urljoin
 import datetime
 
 # First attemp for a simple crawler to get info from a single page.
@@ -153,58 +153,70 @@ def bsObjCreator(url_text):
 
     return
 
-def getLinks(bsObj):
+def getLinks(bsObj, *baseurl):
     """Get all links from page and look for contact page and emails for contact"""
 
     # Sanity check
     if not bsObj or bsObj == None:
         return
 
-    # List for links from our page
-    page_links = set()
-    # Set for unique contact links
-    contact_links = set()
-    # Set of emails
-    emails = set()
-
-    # general set
-    all_emails = set()
+    # Returning dictionary of sets
+    info = {'xpages': set(), 'contact_pages': set(), 'emails':set()}
 
     # Iterates through "href" tags
     for link in bsObj.findAll('a'):
+        # If we have 'href' tag go ahead
         if 'href' in link.attrs:
             link = link.get('href')
+        # Else, skip and loop again
         else:
             continue
-            # Appends all links from website
-        if 'http' in link:
-            page_links.add(link)
-            # Appends mails if is in tag
-        elif 'mailto' in link:
-            emails.add(link[7:])
-            continue
-        else:
-            continue
-        # If one of them is a contact, add to a set
-        if re.search(r"[./a-z0-9-]+(contact)[./a-z0-9-]+", link, re.I) or re.search(r"[./a-z0-9-]+(about)[./a-z0-9-]+", link, re.I):
-            # Adds link to our set
-            print('Got some contact page!')
-            contact_links.add(link)
-        # Makes another request for this suposed contact page
-            try:
-                contact_page = requests.get(link)
-                # Find all e-mails and creates a set with unique values
-                all_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", contact_page.text, re.I))
-                # If we have one
-            except:
-                pass
 
-            # If we have a set of emails
-            if all_emails:
-                # Add to our first set
-                for email in all_emails:
-                    emails.add(email)
-    return emails
+        # If it's a mailto send it to emails set
+        if 'mailto' in link:
+            info['emails'].add(link[7:])
+            continue
+
+        # Adds to our set http links from website
+        if 'http' in link:
+            info['xpages'].add(link)
+            # If it's a contact type add to contact_pages
+            if contactFinder(link):
+                info['contact_pages'].add(link)
+        # Adds paths to our links
+        elif link[0] == '/':
+            # Assuming that we have just one baseurl passed join with the path found
+            fixed_link = urljoin(baseurl[0],link)
+            info['xpages'].add(fixed_link)
+            # If it's a contact type add to contact_pages
+            if contactFinder(fixed_link):
+                info['contact_pages'].add(fixed_link)
+
+    return info
+
+
+def contactFinder(text):
+    """Check with REGEX for contact types"""
+    if re.search(r"[./a-z0-9-]+(contact)[./a-z0-9-]+", text, re.I) or re.search(r"[./a-z0-9-]+(about)[./a-z0-9-]+", text, re.I):
+        return True
+    else:
+        return False
+
+def getMails(info):
+    """Function to get crawl and scrap contact emails"""
+
+    try:
+        for page in info['contact_pages']:
+            # Make a request
+            contact_page = requests.get(page)
+            # Find all e-mails with REGEX and update to our set
+            info['emails'].update(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", contact_page.text, re.I))
+    except requests.exceptions.RequestException as e:
+        print('Connection problems:')
+        print(e)
+
+
+    return info['emails']
 
 
 
@@ -239,6 +251,6 @@ while(True):
         if my_soup:
             title = my_soup.head.title
             meta = my_soup.head.findAll("meta",{"name": {"description", "descriptions", "keywords", "keyword", "Description", "Descriptions", "Keywords", "Keyword"}})
-            emails = getLinks(my_soup)
+            emails = getMails(getLinks(my_soup,my_url))
             printResults(title,meta,emails)
             logger(my_url,title,meta,emails)
