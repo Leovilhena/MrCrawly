@@ -5,6 +5,7 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, urljoin
 import datetime
+import json
 
 # First attemp for a simple crawler to get info from a single page.
 # It actually just craw into contact page for emails
@@ -23,17 +24,21 @@ import datetime
 # DONE IS BETTER THAN PERFECT!
 #
 
-def logger(url, title, meta, emails):
-    """Simple logger, just to have a check what's been going on"""
-    with open('crawly_diary.log', 'a+') as cd:
-        cd.write('Date, "%s"\n' % str(datetime.datetime.now()))
-        cd.write('Url, "%s"\n' % url)
-        cd.write('Title, "%s"\n' % title.get_text())
-        for content in meta:
-            cd.write('Meta, "%s"\n' % content["content"])
-        for email in emails:
-            cd.write('Email, "%s"\n' % email)
-        cd.write('***\n')
+def logger(results):
+    # Now time as key for dictionary
+    date = str(datetime.datetime.now())
+
+    # Open file and load, if not a JSON create a dict for it
+    with open('test.json', 'r') as test:
+        try:
+            loaded = json.load(test)
+        except ValueError:
+            loaded = {}
+
+    # Open file and save as a JSON
+    with open('test.json', 'w+') as log:
+        loaded[date] = results
+        json.dump(loaded, log, indent=2)
 
 
 def printResults(title,meta,emails):
@@ -43,7 +48,7 @@ def printResults(title,meta,emails):
     if title == None or not title:
         print('\nNo title found :(\n')
     else:
-        print('\nTitle:\n',title.get_text())
+        print('\nTitle:\n',title)
 
     # Print for meta
     if meta == None or not meta:
@@ -69,9 +74,8 @@ def getUrl():
         return url
     except:
         print('...so tragic...')
-        pass
+        exit(1)
 
-    return
 
 def helper(u_input):
     """Our instructions and program options"""
@@ -151,7 +155,7 @@ def bsObjCreator(url_text):
     except AttributeError as e:
         print('Error: Lacks ingredients')
 
-    return
+    return None
 
 def getLinks(bsObj, *baseurl):
     """Get all links from page and look for contact page and emails for contact"""
@@ -172,8 +176,8 @@ def getLinks(bsObj, *baseurl):
         else:
             continue
 
-        # If it's a mailto send it to emails set
-        if 'mailto' in link:
+        # If it's a mailto send it to emails set, check if there's a email address inside
+        if 'mailto' in link and bool(re.search(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", link, re.I)):
             info['emails'].add(link[7:])
             continue
 
@@ -215,9 +219,8 @@ def getMails(info):
         print('Connection problems:')
         print(e)
 
-
-    return info['emails']
-
+    # Return as a list for serializing in JSON
+    return list(info['emails'])
 
 
 # Welcome prints
@@ -249,8 +252,18 @@ while(True):
         my_soup = bsObjCreator(my_request)
         # If we have na Bs Object, go ahead
         if my_soup:
-            title = my_soup.head.title
-            meta = my_soup.head.findAll("meta",{"name": {"description", "descriptions", "keywords", "keyword", "Description", "Descriptions", "Keywords", "Keyword"}})
+            # Get title tag
+            title = my_soup.head.title.text
+            # Get all meta tagas for name and description of website
+            metas = my_soup.head.findAll("meta",{"name": {"description", "descriptions", "keywords", "keyword", "Description", "Descriptions", "Keywords", "Keyword"}})
+            # Get all emails from contact pages
             emails = getMails(getLinks(my_soup,my_url))
-            printResults(title,meta,emails)
-            logger(my_url,title,meta,emails)
+
+            # Print out
+            printResults(title,metas,emails)
+
+            # Compiling all results!
+            final_results ={'url':my_url,'title':title, 'emails': emails,'meta':[meta['content'] for meta in metas]}
+
+            # Saving/logging activities
+            logger(final_results)
