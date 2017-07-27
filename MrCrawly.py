@@ -28,12 +28,13 @@ def logger(results):
     # Now time as key for dictionary
     date = str(datetime.datetime.now())
 
-    # Open file and load, if not a JSON create a dict for it
-    with open('crawly_diary.json', 'r+') as log:
-        try:
+
+    if os.path.isfile('crawly_diary.json'):
+        # Open file and load, if not a JSON create a dict for it
+        with open('crawly_diary.json', 'r') as log:
             loaded = json.load(log)
-        except ValueError:
-            loaded = {}
+    else:
+        loaded = {}
 
     # Open file and save as a JSON
     with open('crawly_diary.json', 'w+') as log:
