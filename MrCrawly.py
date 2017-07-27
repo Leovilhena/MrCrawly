@@ -29,14 +29,14 @@ def logger(results):
     date = str(datetime.datetime.now())
 
     # Open file and load, if not a JSON create a dict for it
-    with open('test.json', 'r') as test:
+    with open('crawly_diary.json', 'r+') as log:
         try:
-            loaded = json.load(test)
+            loaded = json.load(log)
         except ValueError:
             loaded = {}
 
     # Open file and save as a JSON
-    with open('test.json', 'w+') as log:
+    with open('crawly_diary.json', 'w+') as log:
         loaded[date] = results
         json.dump(loaded, log, indent=2)
 
