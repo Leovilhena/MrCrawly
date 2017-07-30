@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, urljoin
 import datetime
 import json
+import os
 
 # First attemp for a simple crawler to get info from a single page.
 # It actually just craw into contact page for emails
