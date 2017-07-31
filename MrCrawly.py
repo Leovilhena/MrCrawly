@@ -25,17 +25,15 @@ import os
 # DONE IS BETTER THAN PERFECT!
 #
 
-def logger(results):
+def logger(results, loaded={}):
     # Now time as key for dictionary
     date = str(datetime.datetime.now())
 
-
+    # Check for file in disk
     if os.path.isfile('crawly_diary.json'):
         # Open file and load, if not a JSON create a dict for it
         with open('crawly_diary.json', 'r') as log:
             loaded = json.load(log)
-    else:
-        loaded = {}
 
     # Open file and save as a JSON
     with open('crawly_diary.json', 'w+') as log:
@@ -47,13 +45,13 @@ def printResults(title,meta,emails):
     """Just print our results """
 
     # Print for title
-    if title == None or not title:
+    if not title:
         print('\nNo title found :(\n')
     else:
         print('\nTitle:\n',title)
 
     # Print for meta
-    if meta == None or not meta:
+    if not meta:
         print('\nNo meta found :(\n')
     else:
         print('\nMeta Tag:')
@@ -61,7 +59,7 @@ def printResults(title,meta,emails):
             print(content["content"])
 
     # Print for emails
-    if emails == None or not emails:
+    if not emails:
         print('\nNo email found :(\n')
     else:
         print('\nContact emails:')
@@ -105,13 +103,9 @@ def urlBuilder(url):
     # Splits url for checking, useful to add more features later
     split_url = urlsplit(url)
 
-    # Variable declaration
-    new_url = ""
-
     # if not given which protocol, put http as standard
     if not split_url.scheme:
-        new_url = 'http://' + url
-        return new_url
+        return 'http://' + url
     else:
         return url
 
@@ -152,18 +146,18 @@ def bsObjCreator(url_text):
     """Creates a BeautifulSoup Object for scraping"""
 
     try:
-        bsObj = BeautifulSoup(url_text, "html5lib")
+        bsObj = BeautifulSoup(url_text, "lxml")
         return bsObj
     except AttributeError as e:
         print('Error: Lacks ingredients')
 
     return None
 
-def getLinks(bsObj, *baseurl):
+def getLinks(bsObj, baseurl):
     """Get all links from page and look for contact page and emails for contact"""
 
     # Sanity check
-    if not bsObj or bsObj == None:
+    if not bsObj:
         return
 
     # Returning dictionary of sets
@@ -269,3 +263,4 @@ while(True):
 
             # Saving/logging activities
             logger(final_results)
+
