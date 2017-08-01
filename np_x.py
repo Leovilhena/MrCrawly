@@ -97,15 +97,3 @@ class NPExtractor(object):
             #if t[1] == "NNP" or t[1] == "NNI" or t[1] == "NN":
                 matches.append(t[0])
         return matches
-
-
-# Main method, just run "python np_extractor.py"
-def main():
-
-    sentence = "Swayy is a beautiful new dashboard for discovering and curating online content."
-    np_extractor = NPExtractor(sentence)
-    result = np_extractor.extract()
-    print("This sentence is about: %s" % ", ".join(result))
-
-if __name__ == '__main__':
-    main()
