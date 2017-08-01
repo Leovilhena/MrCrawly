@@ -7,10 +7,15 @@ from urllib.parse import urlsplit, urljoin
 import datetime
 import json
 import os
+import np_x
+from np_x import NPExtractor
 
 # First attemp for a simple crawler to get info from a single page.
 # It actually just craw into contact page for emails
 # Can get links from pages, meta content and title.
+
+# Recently update! Just add NLP for what's page is about. It's in beta test
+# np_x.py Create by Shlomi Babluki. Thanks! I'll add and tweak some functionalities asap!
 
 # Functionalities to be added soon:
 # - Analize texts, summerize paragraphs and compare to meta
@@ -41,7 +46,7 @@ def logger(results, loaded={}):
         json.dump(loaded, log, indent=2)
 
 
-def printResults(title,meta,emails):
+def printResults(title,about,meta,emails):
     """Just print our results """
 
     # Print for title
@@ -49,6 +54,11 @@ def printResults(title,meta,emails):
         print('\nNo title found :(\n')
     else:
         print('\nTitle:\n',title)
+
+    if not about:
+        print('\nNothing found about it :(\n')
+    else:
+        print('\nAbout:\n',", ".join(about))
 
     # Print for meta
     if not meta:
@@ -167,6 +177,7 @@ def getLinks(bsObj, baseurl):
     for link in bsObj.findAll('a'):
         # If we have 'href' tag go ahead
         if 'href' in link.attrs:
+            # NEED TO FIX FOR LINK NOT WELL WRITTEN
             link = link.get('href')
         # Else, skip and loop again
         else:
@@ -246,21 +257,29 @@ while(True):
     # If succeed create an BeautifulSoup Object
     if my_request:
         my_soup = bsObjCreator(my_request)
+
         # If we have na Bs Object, go ahead
         if my_soup:
             # Get title tag
             title = my_soup.head.title.text
+
+            # NLP for topics
+            np_extractor = NPExtractor(title)
+            about = np_extractor.extract()
+
             # Get all meta tagas for name and description of website
             metas = my_soup.head.findAll("meta",{"name": {"description", "descriptions", "keywords", "keyword", "Description", "Descriptions", "Keywords", "Keyword"}})
+
             # Get all emails from contact pages
             emails = getMails(getLinks(my_soup,my_url))
 
             # Print out
-            printResults(title,metas,emails)
+            printResults(title,about,metas,emails)
 
             # Compiling all results!
-            final_results ={'url':my_url,'title':title, 'emails': emails,'meta':[meta['content'] for meta in metas]}
+            final_results ={'url':my_url,'title':title, 'topics':about, 'emails': emails,'meta':[meta['content'] for meta in metas]}
 
             # Saving/logging activities
             logger(final_results)
+
 
