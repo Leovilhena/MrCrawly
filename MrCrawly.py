@@ -197,7 +197,7 @@ def getLinks(bsObj, baseurl):
         # Adds paths to our links
         elif '/' in link:
             # Assuming that we have just one baseurl passed join with the path found
-            fixed_link = urljoin(baseurl[0],link)
+            fixed_link = urljoin(baseurl,link)
             info['xpages'].add(fixed_link)
             # If it's a contact type add to contact_pages
             if contactFinder(fixed_link):
