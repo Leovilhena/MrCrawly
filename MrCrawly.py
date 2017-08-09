@@ -29,8 +29,12 @@ from np_x import NPExtractor
 #
 
 def openFile(path):
-    with open(path,'r') as address_list:
-        link_list = list(set(email.replace("\n", "") for email in address_list if email))
+    try:
+        with open(path,'r') as address_list:
+            link_list = list(set(email.replace("\n", "") for email in address_list if email))
+    except:
+        print('Error while opening the file')
+        
     return link_list
 
 def logger(results, loaded={}):
