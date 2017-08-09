@@ -15,10 +15,8 @@ from np_x import NPExtractor
 # Can get links from pages, meta content and title.
 
 # Recently update! Just add NLP for what's page is about. It's in beta test
-# np_x.py Create by Shlomi Babluki. Thanks! I'll add and tweak some functionalities asap!
 
 # Functionalities to be added soon:
-# - Analize texts, summerize paragraphs and compare to meta
 # - Abbility to crawl deeper to get more info
 # - Google up and get more from different websites of the same kind
 # - Identify language and improve for Portuguese and Polish
@@ -29,6 +27,11 @@ from np_x import NPExtractor
 #
 # DONE IS BETTER THAN PERFECT!
 #
+
+def openFile(path):
+    with open(path,'r') as address_list:
+        link_list = list(set(email.replace("\n", "") for email in address_list if email))
+    return link_list
 
 def logger(results, loaded={}):
     # Now time as key for dictionary
@@ -78,7 +81,7 @@ def printResults(title,about,meta,emails):
 
 
 def getUrl():
-    """Just get the input and move one"""
+    """Just get the input and move on"""
     try:
         url = input('Mr.Crawly: ')
         return url
@@ -96,8 +99,17 @@ def helper(u_input):
     # Check for program options
     if u_input == 'q':
         exit(0)
+    elif u_input == 'o':
+        path = input('Type file name: ')
+        link_list = openFile(path)
+        for link in link_list:
+            print('\n' + link)
+            Crawling(link)
+        return True
+
     elif u_input == 'h':
         print('\nJust type a website address to get contacts (english)')
+        print('Type O to open a file')
         print('Press Q to quit')
         return True
     elif u_input == 'scream':
@@ -121,12 +133,15 @@ def urlBuilder(url):
 
 def makeRequest(url):
     """Requests given url """
+    # Sanity check
+    if not url:
+        return
 
     # Headers for request mobile version
     headers = {"User-Agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 10_0 like Mac OS) AppleWebKit/602.1.38 (KHTML, like Gecko) Version/10.0 Mobile/14A300 Safari/602.1",
                 "Accept-Language":"en-US,en;q=0.5"}
     try:
-        print('Mr.Crawling ...')
+        print('\nMr.Crawling ...')
         # Our main request
         html  = requests.get(url, headers=headers)
         if html.status_code == requests.codes.ok:
@@ -194,6 +209,7 @@ def getLinks(bsObj, baseurl):
             # If it's a contact type add to contact_pages
             if contactFinder(link):
                 info['contact_pages'].add(link)
+
         # Adds paths to our links
         elif '/' in link:
             # Assuming that we have just one baseurl passed join with the path found
@@ -229,27 +245,9 @@ def getMails(info):
     # Return as a list for serializing in JSON
     return list(info['emails'])
 
-
-# Welcome prints
-print("\n'Uncovering things that were sacred and manifest on this Earth'")
-print('Type H for help or scream!')
-print("Type Q to exit but there is no scape!")
-
-# Infinite loop for running
-while(True):
-
-    # Initial print
-    print('\nWhat went on in your head?')
-
-    # Getting your url
-    first_input = getUrl()
-
-    # Checking input for other options
-    if helper(first_input):
-        continue
-
+def Crawling(url):
     # Building url
-    my_url = urlBuilder(first_input)
+    my_url = urlBuilder(url)
 
     # Making our request
     my_request = makeRequest(my_url)
@@ -283,3 +281,27 @@ while(True):
             logger(final_results)
 
 
+# Welcome prints
+print("\n'Uncovering things that were sacred and manifest on this Earth'")
+print('Type H for help or scream!')
+print('Type Q to exit but there is no scape!')
+print('Type O to unlock the gates of a file!')
+
+# Infinite loop for running
+def main():
+    while(True):
+        # Initial print
+        print('\nWhat went on in your head?')
+
+        # Getting your url
+        first_input = getUrl()
+
+        # Checking input for other options
+        if helper(first_input):
+            pass
+        else:
+            Crawling(first_input)
+
+
+if __name__ == '__main__':
+    main()
