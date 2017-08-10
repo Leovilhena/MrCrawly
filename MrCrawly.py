@@ -32,10 +32,11 @@ def openFile(path):
     try:
         with open(path,'r') as address_list:
             link_list = list(set(email.replace("\n", "") for email in address_list if email))
+            return link_list
+
     except:
         print('Error while opening the file')
-        
-    return link_list
+        return
 
 def logger(results, loaded={}):
     # Now time as key for dictionary
@@ -106,10 +107,15 @@ def helper(u_input):
     elif u_input == 'o':
         path = input('Type file name: ')
         link_list = openFile(path)
-        for link in link_list:
-            print('\n' + link)
-            Crawling(link)
-        return True
+        if link_list:
+            for link in link_list:
+                print('\n' + link)
+                Crawling(link)
+                return True
+        else:
+            return False
+
+
 
     elif u_input == 'h':
         print('\nJust type a website address to get contacts (english)')
