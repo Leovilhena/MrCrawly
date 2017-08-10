@@ -35,8 +35,8 @@ def openFile(path):
             return link_list
 
     except:
-        print('Error while opening the file')
-        return
+        print('Error while opening the file!')
+        return None
 
 def logger(results, loaded={}):
     # Now time as key for dictionary
@@ -111,9 +111,9 @@ def helper(u_input):
             for link in link_list:
                 print('\n' + link)
                 Crawling(link)
-                return True
+                return False
         else:
-            return False
+            return True
 
 
 
@@ -308,7 +308,7 @@ def main():
 
         # Checking input for other options
         if helper(first_input):
-            pass
+            continue
         else:
             Crawling(first_input)
 
